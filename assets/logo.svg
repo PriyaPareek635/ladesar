@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 140" role="img" aria-labelledby="t">
+  <title id="t">Ladesar monogram</title>
+  <g fill="none" stroke="#C9A66B" stroke-linejoin="round">
+    <path stroke-width="2.4" d="M18 136V62C18 36 44 26 60 6c16 20 42 30 42 56v74z"/>
+    <path stroke-width="1" d="M26 128V64c0-21 22-30 34-46 12 16 34 25 34 46v64z"/>
+  </g>
+  <circle cx="60" cy="4" r="2.6" fill="#C9A66B"/>
+  <path fill="#C9A66B" d="M38 46h20v3h-5v51h24c3 0 4-3 5-8h2v18H38v-3h6V49h-6z"/>
+  <circle cx="68" cy="66" r="6" fill="#C9A66B"/>
+  <path fill="#C9A66B" d="M65 70l-3 18h12l-3-18z"/>
+</svg>

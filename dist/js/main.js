@@ -227,9 +227,10 @@
     $('.form-status', dForm).textContent = '';
     $('.form-status', dForm).className = 'form-status';
     dForm.hidden = false;
-    dForm.dataset.context = JSON.stringify({
-      checkin: checkIn.value, checkout: checkOut.value, adults: adults, children: children, rooms: rooms, nights: nights
-    });
+    // Travels with the request to email and WhatsApp.
+    $('[name="stay"]', dForm).value = $$('div', summary).map(function (d) {
+      return $('dt', d).textContent + ': ' + $('dd', d).textContent;
+    }).join('\n');
 
     if (typeof dialog.showModal === 'function') {
       dialog.showModal();
@@ -262,7 +263,7 @@
     });
   })();
 
-  /* ---------- Generic form submission ---------- */
+  /* ---------- Form submission: email (Netlify Forms) + WhatsApp ---------- */
   var MESSAGES = {
     booking: 'Thank you. Your request has reached our reservations team, and we will confirm your stay by phone or email shortly.',
     table: 'Thank you. Your table request has been received, and we will confirm by phone or email.',
@@ -270,6 +271,36 @@
     contact: 'Thank you for writing to us. We will reply within a few hours.',
     interest: 'Thank you. We will be in touch before reservations open on 12 October.'
   };
+  var TITLES = {
+    booking: 'Room reservation request',
+    table: 'Table reservation request',
+    event: 'Event enquiry',
+    contact: 'Message from the website',
+    interest: 'Registration of interest'
+  };
+  var whatsappNumber = document.body.getAttribute('data-whatsapp');
+  // Email only goes out from the live site; a local preview (file:// or a local server) skips it.
+  var hosted = /^https?:$/.test(location.protocol) &&
+    !/^(localhost|127\.0\.0\.1|\[::1\]|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)$/.test(location.hostname);
+
+  function fieldLabel(f) {
+    var label = f.id && $('label[for="' + f.id + '"]');
+    if (!label) return f.name;
+    var copy = label.cloneNode(true);
+    $$('.optional', copy).forEach(function (o) { o.remove(); });
+    return copy.textContent.trim();
+  }
+
+  function whatsappText(form) {
+    var lines = ['*' + (TITLES[form.dataset.form] || 'Website enquiry') + '*'];
+    var stay = $('[name="stay"]', form);
+    if (stay && stay.value) lines.push(stay.value);
+    $$('input, select, textarea', form).forEach(function (f) {
+      if (f.type === 'hidden' || f.classList.contains('hp') || !f.value.trim()) return;
+      lines.push(fieldLabel(f) + ': ' + (f.type === 'date' ? formatDate(f.value) : f.value.trim()));
+    });
+    return lines.join('\n');
+  }
 
   $$('.js-form').forEach(function (form) {
     form.addEventListener('submit', function (e) {
@@ -278,7 +309,7 @@
       status.className = 'form-status';
       status.textContent = '';
 
-      var fields = $$('input, select, textarea', form).filter(function (f) { return !f.classList.contains('hp'); });
+      var fields = $$('input, select, textarea', form).filter(function (f) { return !f.classList.contains('hp') && f.type !== 'hidden'; });
       var firstInvalid = null;
       fields.forEach(function (f) {
         var ok = f.checkValidity();
@@ -293,33 +324,41 @@
       }
       if ($('.hp', form) && $('.hp', form).value) return; // spam trap
 
-      var data = {};
-      new FormData(form).forEach(function (v, k) { if (k !== 'company') data[k] = v; });
-      if (form.dataset.context) data.stay = JSON.parse(form.dataset.context);
+      // WhatsApp must open inside the click itself, or browsers block it as a pop-up.
+      var openedWhatsApp = false;
+      if (whatsappNumber) {
+        var url = 'https://wa.me/' + whatsappNumber + '?text=' + encodeURIComponent(whatsappText(form));
+        window.open(url, '_blank', 'noopener');
+        openedWhatsApp = true;
+      }
 
       var done = function () {
         status.classList.add('is-success');
         status.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-check"/></svg><span></span>';
-        $('span', status).textContent = MESSAGES[form.dataset.form] || 'Thank you.';
+        $('span', status).textContent = (MESSAGES[form.dataset.form] || 'Thank you.') +
+          (openedWhatsApp ? ' WhatsApp has opened with your details: press Send to reach us directly.' : '');
         form.reset();
         if (tableTime) tableTime.value = '';
       };
 
-      // Set data-endpoint on a form (e.g. a Formspree or CRM URL) to send submissions for real.
-      var endpoint = form.getAttribute('data-endpoint');
-      if (endpoint) {
-        var btn = $('button[type="submit"]', form);
-        btn.disabled = true;
-        fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(data) })
-          .then(function (res) { if (!res.ok) throw new Error(res.status); done(); })
-          .catch(function () {
-            status.classList.add('is-error');
-            status.textContent = 'We could not send your request just now. Please call us on +91 1564 000000 or message us on WhatsApp.';
-          })
-          .then(function () { btn.disabled = false; });
-      } else {
-        done();
-      }
+      // Netlify Forms emails each submission.
+      if (!hosted) { done(); return; }
+      var btn = $('button[type="submit"]', form);
+      btn.disabled = true;
+      fetch('/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams(new FormData(form)).toString()
+      })
+        .then(function (res) { if (!res.ok) throw new Error(res.status); done(); })
+        .catch(function () {
+          status.classList.add('is-error');
+          var phone = $('.contact__list a[href^="tel:"]');
+          status.textContent = 'We could not send your details by email just now. ' +
+            (openedWhatsApp ? 'Please press Send in WhatsApp, or call us' : 'Please call us') +
+            (phone ? ' on ' + phone.textContent : '') + '.';
+        })
+        .then(function () { btn.disabled = false; });
     });
 
     form.addEventListener('input', function (e) {

@@ -50,7 +50,7 @@
   }
   </script>
 </head>
-<body>
+<body data-whatsapp="918639674378">
   <a class="skip-link" href="#main">Skip to content</a>
 
   <!-- ============ ICON SPRITE ============ -->
@@ -333,7 +333,8 @@
             <li><svg class="icon" aria-hidden="true"><use href="#i-pin"/></svg>Sardarshahr, Churu</li>
           </ul>
         </div>
-        <form class="card-form reveal js-form" id="interest-form" data-form="interest" novalidate>
+        <form class="card-form reveal js-form" id="interest-form" data-form="interest" novalidate name="interest" data-netlify="true" data-netlify-honeypot="company">
+          <input type="hidden" name="form-name" value="interest">
           <h3>Register your interest</h3>
           <div class="form-grid">
             <div class="field field--full"><label for="in-name">Full name</label><input id="in-name" name="name" autocomplete="name" required></div>
@@ -451,7 +452,8 @@
             </div>
           </div>
 
-          <form class="card-form reveal js-form" id="contact-form" data-form="contact" novalidate>
+          <form class="card-form reveal js-form" id="contact-form" data-form="contact" novalidate name="contact" data-netlify="true" data-netlify-honeypot="company">
+          <input type="hidden" name="form-name" value="contact">
             <h3>Send us a message</h3>
             <div class="form-grid">
               <div class="field"><label for="ct-name">Name</label><input id="ct-name" name="name" autocomplete="name" required></div>

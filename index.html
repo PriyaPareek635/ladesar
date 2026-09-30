@@ -50,7 +50,7 @@
   }
   </script>
 </head>
-<body>
+<body data-whatsapp="918639674378">
   <a class="skip-link" href="#main">Skip to content</a>
 
   <!-- ============ ICON SPRITE ============ -->
@@ -333,7 +333,8 @@
             <li><svg class="icon" aria-hidden="true"><use href="#i-pin"/></svg>Sardarshahr, Churu</li>
           </ul>
         </div>
-        <form class="card-form reveal js-form" id="interest-form" data-form="interest" novalidate>
+        <form class="card-form reveal js-form" id="interest-form" data-form="interest" novalidate name="interest" data-netlify="true" data-netlify-honeypot="company">
+          <input type="hidden" name="form-name" value="interest">
           <h3>Register your interest</h3>
           <div class="form-grid">
             <div class="field field--full"><label for="in-name">Full name</label><input id="in-name" name="name" autocomplete="name" required></div>
@@ -396,7 +397,9 @@
 
     <!-- Booking request dialog (step 2) -->
     <dialog class="dialog" id="booking-dialog" aria-labelledby="dlg-title">
-      <form class="dialog__inner js-form" method="dialog" data-form="booking" novalidate>
+      <form class="dialog__inner js-form" method="dialog" data-form="booking" novalidate name="booking" data-netlify="true" data-netlify-honeypot="company">
+          <input type="hidden" name="form-name" value="booking">
+          <input type="hidden" name="stay">
         <button class="dialog__close" type="button" data-close aria-label="Close">
           <svg class="icon" aria-hidden="true"><use href="#i-close"/></svg>
         </button>
@@ -619,7 +622,8 @@
               <p>Pure vegetarian. Open daily, to residents and visitors.</p>
             </div>
 
-            <form class="card-form reveal js-form" id="table-form" data-form="table" novalidate>
+            <form class="card-form reveal js-form" id="table-form" data-form="table" novalidate name="table" data-netlify="true" data-netlify-honeypot="company">
+          <input type="hidden" name="form-name" value="table">
               <h3>Reserve a table</h3>
               <div class="form-grid">
                 <div class="field"><label for="tb-date">Date</label><input type="date" id="tb-date" name="date" required></div>
@@ -750,7 +754,8 @@
           </ul>
         </div>
 
-        <form class="card-form reveal js-form" id="event-form" data-form="event" novalidate>
+        <form class="card-form reveal js-form" id="event-form" data-form="event" novalidate name="event" data-netlify="true" data-netlify-honeypot="company">
+          <input type="hidden" name="form-name" value="event">
           <h3>Plan your celebration</h3>
           <p class="form-intro">Share a few details and our events team will be in touch within one working day.</p>
           <div class="form-grid">
@@ -846,7 +851,8 @@
             </div>
           </div>
 
-          <form class="card-form reveal js-form" id="contact-form" data-form="contact" novalidate>
+          <form class="card-form reveal js-form" id="contact-form" data-form="contact" novalidate name="contact" data-netlify="true" data-netlify-honeypot="company">
+          <input type="hidden" name="form-name" value="contact">
             <h3>Send us a message</h3>
             <div class="form-grid">
               <div class="field"><label for="ct-name">Name</label><input id="ct-name" name="name" autocomplete="name" required></div>

@@ -14,11 +14,29 @@ python release.py 3   # adds Experiences, Gallery, Weddings, Reviews           (
 
 Sections are marked in `index.html` with `<!--phase:N-->…<!--/phase:N-->` (included from phase N onwards) and `<!--only:N-->…<!--/only:N-->` (phase N only). The build removes later sections from the page completely, so unreleased placeholder content never reaches the live site. In phase 1, every "Book" link goes to the register-interest form.
 
+## Publishing on Netlify
+
+First release (Phase 1):
+
+1. Run `python release.py 1`.
+2. Go to <https://app.netlify.com/drop>, sign in, and drag the `dist` folder onto the page. The site goes live at a `*.netlify.app` address.
+3. In **Site configuration → General → Site details → Change site name**, set the name, e.g. `ladesar` → `ladesar.netlify.app`.
+4. In **Forms**, click **Enable form detection**, then open **Deploys** and drag the `dist` folder in again so Netlify picks up the forms.
+5. In **Forms → Form notifications → Add notification → Email notification**, enter the email address that should receive submissions.
+
+Each later phase: run `python release.py 2` (or `3`), then drag `dist` onto **Deploys** for the same site. Netlify detects any new forms in that phase automatically.
+
+**What happens when a guest submits a form:**
+- **Email:** Netlify stores the submission and emails it to you.
+- **WhatsApp:** WhatsApp opens on the guest's device with their details typed out, addressed to the number in `data-whatsapp` on `<body>`. The guest presses Send.
+
+Emails only work on the live site. When `index.html` is opened from disk, only WhatsApp opens.
+
 ## Before launch: replace these placeholders
 
 | What | Where |
 |---|---|
-| Address, phone, email, WhatsApp number | `index.html`: contact section, footer, header menu, `wa.me/…` links, JSON-LD block in `<head>` |
+| Address, phone, email, WhatsApp number | `index.html`: contact section, footer, header menu, `wa.me/…` links, `data-whatsapp` on `<body>`, JSON-LD block in `<head>` |
 | Map location | `index.html`: the `<iframe>` in `#contact` (change the `q=` value) |
 | Opening date for the countdown (now 21 Oct 2026) | `data-launch` on `#launch` (ISO date with timezone). The banner hides itself after the date passes. |
 | Room rate (₹1,500) | the price in `#rooms` **and** `data-rate` on `#booking-form` (used for the estimate) |

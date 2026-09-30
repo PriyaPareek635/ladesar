@@ -296,11 +296,57 @@
     var stay = $('[name="stay"]', form);
     if (stay && stay.value) lines.push(stay.value);
     $$('input, select, textarea', form).forEach(function (f) {
-      if (f.type === 'hidden' || f.classList.contains('hp') || !f.value.trim()) return;
-      lines.push(fieldLabel(f) + ': ' + (f.type === 'date' ? formatDate(f.value) : f.value.trim()));
+      if (f.type === 'hidden' || f.classList.contains('hp') || f.name === 'country_code' || !f.value.trim()) return;
+      var value = f.type === 'date' ? formatDate(f.value) : f.value.trim();
+      if (f.name === 'phone') value = f.previousElementSibling.value + ' ' + value;
+      lines.push(fieldLabel(f) + ': ' + value);
     });
     return lines.join('\n');
   }
+
+  /* Mobile numbers: country code + a length check per country */
+  function checkPhone(input) {
+    var opt = input.previousElementSibling.selectedOptions[0];
+    var digits = input.value;
+    var min = +opt.dataset.min, max = +opt.dataset.max, start = opt.dataset.start;
+    var size = min === max ? min + '-digit' : min + ' to ' + max + ' digit';
+    var message = '';
+    if (digits && (digits.length < min || digits.length > max)) {
+      message = 'Enter a ' + size + ' mobile number for ' + opt.dataset.country + ' (' + opt.value + ').';
+    } else if (digits && start && start.indexOf(digits.charAt(0)) === -1) {
+      message = 'A mobile number for ' + opt.dataset.country + ' starts with ' + start.split('').join(', ') + '.';
+    }
+    input.setCustomValidity(message);
+  }
+  $$('.phone-input').forEach(function (group) {
+    var select = $('select', group), input = $('input', group);
+    var sync = function () {
+      var opt = select.selectedOptions[0];
+      input.maxLength = +opt.dataset.max;
+      // an example number of the right length shows guests the format (India: 98765 43210)
+      input.placeholder = opt.value === '+91' ? '98765 43210' :
+        opt.dataset.min === opt.dataset.max ? opt.dataset.max + '-digit number' : opt.dataset.min + '–' + opt.dataset.max + ' digits';
+      checkPhone(input);
+    };
+    input.addEventListener('input', function () {
+      // digits only; a leading 0 (trunk prefix) is dropped because the country code replaces it
+      var clean = input.value.replace(/\D/g, '').replace(/^0+/, '').slice(0, input.maxLength);
+      if (clean !== input.value) input.value = clean;
+      checkPhone(input);
+    });
+    select.addEventListener('change', sync);
+    sync();
+  });
+
+  /* Email stays optional, but if given it must be a complete address */
+  var EMAIL = /^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/;
+  function checkEmail(input) {
+    var v = input.value.trim();
+    input.setCustomValidity(v && !EMAIL.test(v) ? 'Enter a complete email address, like name@gmail.com, or leave it blank.' : '');
+  }
+  $$('input[type="email"]').forEach(function (input) {
+    input.addEventListener('input', function () { checkEmail(input); });
+  });
 
   $$('.js-form').forEach(function (form) {
     form.addEventListener('submit', function (e) {
@@ -310,6 +356,8 @@
       status.textContent = '';
 
       var fields = $$('input, select, textarea', form).filter(function (f) { return !f.classList.contains('hp') && f.type !== 'hidden'; });
+      $$('input[type="email"]', form).forEach(checkEmail);
+      $$('.phone-input input', form).forEach(checkPhone);
       var firstInvalid = null;
       fields.forEach(function (f) {
         var ok = f.checkValidity();
@@ -318,7 +366,8 @@
       });
       if (firstInvalid) {
         status.classList.add('is-error');
-        status.textContent = 'Please complete the highlighted fields.';
+        // a specific reason (phone length, email format) beats the generic one
+        status.textContent = firstInvalid.validity.customError ? firstInvalid.validationMessage : 'Please complete the highlighted fields.';
         firstInvalid.focus();
         return;
       }
@@ -338,6 +387,7 @@
         $('span', status).textContent = (MESSAGES[form.dataset.form] || 'Thank you.') +
           (openedWhatsApp ? ' WhatsApp has opened with your details: press Send to reach us directly.' : '');
         form.reset();
+        $$('.phone-input select', form).forEach(function (sel) { sel.dispatchEvent(new Event('change')); });
         if (tableTime) tableTime.value = '';
       };
 

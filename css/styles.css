@@ -315,6 +315,9 @@ button { font: inherit; color: inherit; }
   outline: none; border-color: var(--gold-soft); box-shadow: 0 0 0 3px rgba(201, 166, 107, .2);
 }
 .field input[aria-invalid="true"], .field select[aria-invalid="true"], .field textarea[aria-invalid="true"] { border-color: #E08B6E; }
+.phone-input { display: flex; gap: 8px; }
+.phone-input select { flex: 0 0 auto; width: 88px; padding-left: 12px; padding-right: 30px; background-position: right 8px center; }
+.phone-input input { flex: 1; min-width: 0; }
 .form-grid { display: grid; gap: 16px; grid-template-columns: 1fr; margin-bottom: 20px; }
 @media (min-width: 560px) {
   .form-grid { grid-template-columns: 1fr 1fr; }

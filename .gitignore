@@ -1,0 +1,3 @@
+# Built by release.py (locally or on Netlify); never commit it
+dist/
+__pycache__/

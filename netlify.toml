@@ -1,0 +1,8 @@
+# Netlify builds the site from site.json + index.html on every push,
+# and publishes only the finished dist/ folder.
+#
+# To release the next phase, change the number below and push:
+#   1 = Coming Soon (2 Oct)   2 = + Rooms & Dining (12 Oct)   3 = Full site (16 Oct)
+[build]
+  command = "python3 release.py 1"
+  publish = "dist"

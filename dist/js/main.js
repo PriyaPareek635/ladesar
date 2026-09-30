@@ -279,7 +279,9 @@
     interest: 'Registration of interest'
   };
   var whatsappNumber = document.body.getAttribute('data-whatsapp');
-  var hosted = /^https?:$/.test(location.protocol);
+  // Email only goes out from the live site; a local preview (file:// or a local server) skips it.
+  var hosted = /^https?:$/.test(location.protocol) &&
+    !/^(localhost|127\.0\.0\.1|\[::1\]|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)$/.test(location.hostname);
 
   function fieldLabel(f) {
     var label = f.id && $('label[for="' + f.id + '"]');
@@ -339,7 +341,7 @@
         if (tableTime) tableTime.value = '';
       };
 
-      // Netlify Forms emails each submission. Opened from disk (file://) there is nothing to post to.
+      // Netlify Forms emails each submission.
       if (!hosted) { done(); return; }
       var btn = $('button[type="submit"]', form);
       btn.disabled = true;

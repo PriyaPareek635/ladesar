@@ -15,12 +15,10 @@ The phone number, WhatsApp number, email and site address live in `site.json`, n
 }
 ```
 
-- **Where they appear:** every build fills them into the header menu, contact section, footer, WhatsApp buttons, form messages and search-engine details.
+- **Where they appear:** every build fills them into the header menu, contact section, footer, WhatsApp buttons and search-engine details.
 - **To change one:** edit `site.json`, run `python release.py N` again, and re-upload `dist/`.
 - **Format:** write numbers with the country code; spaces are fine.
 - **Checks:** the build stops with a message if a number is too short, the country code is missing, or the email address looks wrong.
-
-The email address that *receives* form submissions is set in Netlify (see below), not in `site.json`.
 
 ## Phased release
 
@@ -36,21 +34,19 @@ Sections are marked in `index.html` with `<!--phase:N-->…<!--/phase:N-->` (inc
 
 ## Publishing on Netlify
 
-First release (Phase 1):
+The site is connected to Netlify through GitHub. Netlify reads `netlify.toml`, runs `release.py` for the phase named there, and publishes only `dist/`.
 
-1. Run `python release.py 1`.
-2. Go to <https://app.netlify.com/drop>, sign in, and drag the `dist` folder onto the page. The site goes live at a `*.netlify.app` address.
-3. In **Site configuration → General → Site details → Change site name**, set the name, e.g. `ladesar` → `ladesar.netlify.app`.
-4. In **Forms**, click **Enable form detection**, then open **Deploys** and drag the `dist` folder in again so Netlify picks up the forms.
-5. In **Forms → Form notifications → Add notification → Email notification**, enter the email address that should receive submissions.
+- **To publish a change:** commit and push to GitHub. Netlify rebuilds within a couple of minutes.
+- **To change phase:** edit the number in `command = "python3 release.py 3"` in `netlify.toml`, then push.
+- **To check first:** run `python release.py 3 --preview` and open http://localhost:8000. The command also prints an address for a phone on the same Wi-Fi.
 
-Each later phase: run `python release.py 2` (or `3`), then drag `dist` onto **Deploys** for the same site. Netlify detects any new forms in that phase automatically.
+## Forms
 
-**What happens when a guest submits a form:**
-- **Email:** Netlify stores the submission and emails it to you.
-- **WhatsApp:** WhatsApp opens on the guest's device with their details typed out, addressed to the `whatsapp` number in `site.json`. The guest presses Send.
+Every form (room booking, table, events, contact, and register interest in Phase 1) sends the guest's details to the hotel on WhatsApp:
 
-Emails only work on the live site. When `index.html` is opened from disk, only WhatsApp opens.
+- **Validation:** the form checks the guest's details in the browser. The mobile number needs the right length for the chosen country code.
+- **WhatsApp:** pressing the button opens WhatsApp with the details typed out, addressed to the `whatsapp` number in `site.json`. The guest presses Send.
+- **No other copy:** nothing is stored or emailed anywhere else. If a guest closes WhatsApp without sending, the hotel doesn't receive that enquiry.
 
 ## Before launch: replace these placeholders
 
@@ -73,7 +69,3 @@ Every image slot is a styled `.art` placeholder with a descriptive `aria-label`.
 ```html
 <div class="art art--arch"><img src="images/heritage-room.jpg" alt="Heritage Room with carved wooden doors" loading="lazy" width="800" height="680"></div>
 ```
-
-## Forms
-
-The booking, table, event and contact forms validate in the browser and show a confirmation message, but **they don't send data anywhere yet**. To send submissions, add `data-endpoint="https://…"` to a form (e.g. a Formspree, Netlify Forms or CRM webhook URL). The form then POSTs JSON to that address. Each form has a hidden honeypot field to catch spam bots.

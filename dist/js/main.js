@@ -156,7 +156,10 @@
   }
 
   var today = new Date();
-  $$('input[type="date"]').forEach(function (f) { f.min = isoDate(today); });
+  // nothing can be booked before opening day (taken from the launch banner's date)
+  var opening = launch ? launch.getAttribute('data-launch').slice(0, 10) : '';
+  var firstDay = opening && opening > isoDate(today) ? new Date(opening + 'T00:00:00') : today;
+  $$('input[type="date"]').forEach(function (f) { f.min = isoDate(firstDay); });
 
   /* ---------- Room booking (step 1) ---------- */
   var bookingForm = $('#booking-form');
@@ -168,8 +171,8 @@
   var bookingError = $('#booking-error');
   var dialog = $('#booking-dialog');
 
-  checkIn.min = isoDate(today);
-  checkOut.min = isoDate(addDays(today, 1));
+  checkIn.min = isoDate(firstDay);
+  checkOut.min = isoDate(addDays(firstDay, 1));
   checkIn.addEventListener('change', function () {
     if (!checkIn.value) return;
     var next = isoDate(addDays(new Date(checkIn.value + 'T00:00:00'), 1));
@@ -263,13 +266,13 @@
     });
   })();
 
-  /* ---------- Form submission: email (Netlify Forms) + WhatsApp ---------- */
+  /* ---------- Form submission: details go to the hotel on WhatsApp ---------- */
   var MESSAGES = {
-    booking: 'Thank you. Your request has reached our reservations team, and we will confirm your stay by phone or email shortly.',
-    table: 'Thank you. Your table request has been received, and we will confirm by phone or email.',
-    event: 'Thank you for thinking of Ladesar. Our events team will be in touch within one working day.',
-    contact: 'Thank you for writing to us. We will reply within a few hours.',
-    interest: 'Thank you. We will be in touch before reservations open on 12 October.'
+    booking: 'We will confirm your stay by phone or WhatsApp shortly.',
+    table: 'We will confirm your table by phone or WhatsApp.',
+    event: 'Our events team will be in touch within one working day.',
+    contact: 'We will reply within a few hours.',
+    interest: 'We will be in touch before reservations open on 12 October.'
   };
   var TITLES = {
     booking: 'Room reservation request',
@@ -279,9 +282,6 @@
     interest: 'Registration of interest'
   };
   var whatsappNumber = document.body.getAttribute('data-whatsapp');
-  // Email only goes out from the live site; a local preview (file:// or a local server) skips it.
-  var hosted = /^https?:$/.test(location.protocol) &&
-    !/^(localhost|127\.0\.0\.1|\[::1\]|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)$/.test(location.hostname);
 
   function fieldLabel(f) {
     var label = f.id && $('label[for="' + f.id + '"]');
@@ -296,7 +296,7 @@
     var stay = $('[name="stay"]', form);
     if (stay && stay.value) lines.push(stay.value);
     $$('input, select, textarea', form).forEach(function (f) {
-      if (f.type === 'hidden' || f.classList.contains('hp') || f.name === 'country_code' || !f.value.trim()) return;
+      if (f.type === 'hidden' || f.name === 'country_code' || !f.value.trim()) return;
       var value = f.type === 'date' ? formatDate(f.value) : f.value.trim();
       if (f.name === 'phone') value = f.previousElementSibling.value + ' ' + value;
       lines.push(fieldLabel(f) + ': ' + value);
@@ -338,16 +338,6 @@
     sync();
   });
 
-  /* Email stays optional, but if given it must be a complete address */
-  var EMAIL = /^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/;
-  function checkEmail(input) {
-    var v = input.value.trim();
-    input.setCustomValidity(v && !EMAIL.test(v) ? 'Enter a complete email address, like name@gmail.com, or leave it blank.' : '');
-  }
-  $$('input[type="email"]').forEach(function (input) {
-    input.addEventListener('input', function () { checkEmail(input); });
-  });
-
   $$('.js-form').forEach(function (form) {
     form.addEventListener('submit', function (e) {
       e.preventDefault();
@@ -355,8 +345,7 @@
       status.className = 'form-status';
       status.textContent = '';
 
-      var fields = $$('input, select, textarea', form).filter(function (f) { return !f.classList.contains('hp') && f.type !== 'hidden'; });
-      $$('input[type="email"]', form).forEach(checkEmail);
+      var fields = $$('input, select, textarea', form).filter(function (f) { return f.type !== 'hidden'; });
       $$('.phone-input input', form).forEach(checkPhone);
       var firstInvalid = null;
       fields.forEach(function (f) {
@@ -366,12 +355,11 @@
       });
       if (firstInvalid) {
         status.classList.add('is-error');
-        // a specific reason (phone length, email format) beats the generic one
+        // a specific reason (e.g. phone length) beats the generic one
         status.textContent = firstInvalid.validity.customError ? firstInvalid.validationMessage : 'Please complete the highlighted fields.';
         firstInvalid.focus();
         return;
       }
-      if ($('.hp', form) && $('.hp', form).value) return; // spam trap
 
       // WhatsApp must open inside the click itself, or browsers block it as a pop-up.
       var openedWhatsApp = false;
@@ -381,34 +369,15 @@
         openedWhatsApp = true;
       }
 
-      var done = function () {
-        status.classList.add('is-success');
-        status.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-check"/></svg><span></span>';
-        $('span', status).textContent = (MESSAGES[form.dataset.form] || 'Thank you.') +
-          (openedWhatsApp ? ' WhatsApp has opened with your details: press Send to reach us directly.' : '');
-        form.reset();
-        $$('.phone-input select', form).forEach(function (sel) { sel.dispatchEvent(new Event('change')); });
-        if (tableTime) tableTime.value = '';
-      };
-
-      // Netlify Forms emails each submission.
-      if (!hosted) { done(); return; }
-      var btn = $('button[type="submit"]', form);
-      btn.disabled = true;
-      fetch('/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams(new FormData(form)).toString()
-      })
-        .then(function (res) { if (!res.ok) throw new Error(res.status); done(); })
-        .catch(function () {
-          status.classList.add('is-error');
-          var phone = $('.contact__list a[href^="tel:"]');
-          status.textContent = 'We could not send your details by email just now. ' +
-            (openedWhatsApp ? 'Please press Send in WhatsApp, or call us' : 'Please call us') +
-            (phone ? ' on ' + phone.textContent : '') + '.';
-        })
-        .then(function () { btn.disabled = false; });
+      status.classList.add('is-success');
+      status.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-check"/></svg><span></span>';
+      // nothing reaches the hotel until the guest presses Send in WhatsApp, so that step comes first
+      $('span', status).textContent = 'Thank you. ' +
+        (openedWhatsApp ? 'WhatsApp has opened with your details: press Send there to reach us. ' : '') +
+        (MESSAGES[form.dataset.form] || '');
+      form.reset();
+      $$('.phone-input select', form).forEach(function (sel) { sel.dispatchEvent(new Event('change')); });
+      if (tableTime) tableTime.value = '';
     });
 
     form.addEventListener('input', function (e) {

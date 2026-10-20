@@ -1,3 +1,6 @@
 # Built by release.py (locally or on Netlify); never commit it
 dist/
 __pycache__/
+
+# Local settings; on Netlify the same values are set as environment variables
+.env

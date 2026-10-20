@@ -15,7 +15,8 @@ never appears in the page source.
 Contact details come from site.json and are filled into {{placeholders}} in
 index.html, so preview the built dist/index.html rather than index.html itself.
 Environment variables override site.json (set them in Netlify to change values
-without editing code):
+without editing code). Locally they can also come from a .env file next to this
+script; variables already set in the environment win over .env:
 
     SITE_PHONE, SITE_WHATSAPP, SITE_EMAIL, SITE_URL   contact details
     RELEASE_PHASE                                     phase, when none is given
@@ -39,6 +40,22 @@ ROOT = Path(__file__).parent
 DIST = ROOT / "dist"
 PHASES = {1: "Coming Soon", 2: "Rooms & Dining", 3: "Full site"}
 ENV_KEYS = {"phone": "SITE_PHONE", "whatsapp": "SITE_WHATSAPP", "email": "SITE_EMAIL", "site_url": "SITE_URL"}
+
+
+def load_dotenv():
+    """Load KEY=VALUE lines from .env into the environment, without overriding real variables."""
+    path = ROOT / ".env"
+    if not path.exists():
+        return
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key, value = key.strip(), value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+            value = value[1:-1]
+        os.environ.setdefault(key, value)
 
 
 def load_settings():
@@ -143,6 +160,7 @@ def preview(port=8000):
 
 
 if __name__ == "__main__":
+    load_dotenv()
     args = sys.argv[1:]
     want_preview = "--preview" in args
     args = [a for a in args if a != "--preview"]

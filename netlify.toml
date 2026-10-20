@@ -1,8 +1,9 @@
 # Netlify builds the site from site.json + index.html on every push,
 # and publishes only the finished dist/ folder.
 #
-# To release the next phase, change the number below and push:
-#   1 = Coming Soon (2 Oct)   2 = + Rooms & Dining (12 Oct)   3 = Full site (16 Oct)
+# Phase: set RELEASE_PHASE in Netlify (Site configuration -> Environment variables),
+# or it defaults to 3 (full site).  1 = Coming Soon  2 = + Rooms & Dining  3 = Full site
+# Contact details can be overridden there too: SITE_PHONE, SITE_WHATSAPP, SITE_EMAIL, SITE_URL.
 [build]
-  command = "python3 release.py 3"
+  command = "python3 release.py ${RELEASE_PHASE:-3}"
   publish = "dist"

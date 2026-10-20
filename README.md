@@ -20,6 +20,16 @@ The phone number, WhatsApp number, email and site address live in `site.json`, n
 - **Format:** write numbers with the country code; spaces are fine.
 - **Checks:** the build stops with a message if a number is too short, the country code is missing, or the email address looks wrong.
 
+**Changing values from Netlify, without editing code.** Netlify environment variables override `site.json`. Add them under **Site configuration → Environment variables**, then go to **Deploys → Trigger deploy → Deploy site**:
+
+| Variable | Example | Replaces |
+|---|---|---|
+| `SITE_PHONE` | `+91 98290 12345` | `phone` |
+| `SITE_WHATSAPP` | `+91 86396 74378` | `whatsapp` |
+| `SITE_EMAIL` | `stay@example.com` | `email` |
+| `SITE_URL` | `https://ladesar.netlify.app` | `site_url` |
+| `RELEASE_PHASE` | `3` | which phase to publish (defaults to 3) |
+
 ## Phased release
 
 `index.html` contains every section of the full site. Build the version for a phase, then upload the contents of `dist/`:

@@ -14,12 +14,18 @@ never appears in the page source.
 
 Contact details come from site.json and are filled into {{placeholders}} in
 index.html, so preview the built dist/index.html rather than index.html itself.
+Environment variables override site.json (set them in Netlify to change values
+without editing code):
+
+    SITE_PHONE, SITE_WHATSAPP, SITE_EMAIL, SITE_URL   contact details
+    RELEASE_PHASE                                     phase, when none is given
 
 Markers in index.html:
     <!--phase:N--> ... <!--/phase:N-->   kept from phase N onwards
     <!--only:N-->  ... <!--/only:N-->    kept in phase N only
 """
 import json
+import os
 import re
 import shutil
 import socket
@@ -32,21 +38,29 @@ from pathlib import Path
 ROOT = Path(__file__).parent
 DIST = ROOT / "dist"
 PHASES = {1: "Coming Soon", 2: "Rooms & Dining", 3: "Full site"}
+ENV_KEYS = {"phone": "SITE_PHONE", "whatsapp": "SITE_WHATSAPP", "email": "SITE_EMAIL", "site_url": "SITE_URL"}
 
 
 def load_settings():
-    """Read site.json and derive the values the page needs."""
-    try:
-        raw = json.loads((ROOT / "site.json").read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as e:
-        sys.exit(f"Could not read site.json: {e}")
+    """Read site.json, let environment variables override it, and derive the values the page needs."""
+    raw = {}
+    if (ROOT / "site.json").exists():
+        try:
+            raw = json.loads((ROOT / "site.json").read_text(encoding="utf-8"))
+        except json.JSONDecodeError as e:
+            sys.exit(f"Could not read site.json: {e}")
+
+    for key, env in ENV_KEYS.items():
+        if os.environ.get(env, "").strip():
+            raw[key] = os.environ[env].strip()
+            print(f"{key}: from environment variable {env}")
 
     problems = []
     for key in ("phone", "whatsapp", "email", "site_url"):
         if not str(raw.get(key, "")).strip():
-            problems.append(f'"{key}" is missing')
+            problems.append(f'"{key}" is missing (set it in site.json or the {ENV_KEYS[key]} environment variable)')
     if problems:
-        sys.exit("site.json: " + "; ".join(problems))
+        sys.exit("Settings problem: " + "; ".join(problems))
 
     phone_digits = re.sub(r"\D", "", raw["phone"])
     whatsapp_digits = re.sub(r"\D", "", raw["whatsapp"])
@@ -59,7 +73,7 @@ def load_settings():
     if not re.fullmatch(r"https?://[^\s\"<>]+", raw["site_url"].strip()):
         problems.append(f'site_url "{raw["site_url"]}" should start with https://')
     if problems:
-        sys.exit("site.json: " + "; ".join(problems))
+        sys.exit("Settings problem: " + "; ".join(problems))
 
     return {
         "phone": raw["phone"].strip(),
@@ -132,6 +146,8 @@ if __name__ == "__main__":
     args = sys.argv[1:]
     want_preview = "--preview" in args
     args = [a for a in args if a != "--preview"]
+    if not args and os.environ.get("RELEASE_PHASE", "").strip():
+        args = [os.environ["RELEASE_PHASE"].strip()]
     if len(args) != 1 or not args[0].isdigit() or int(args[0]) not in PHASES:
         sys.exit(__doc__)
     build(int(args[0]))
